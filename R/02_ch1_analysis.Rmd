@@ -1,0 +1,435 @@
+---
+title: "final project"
+author: "Karl Veggerby"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# load packages and data loading and organizing
+```{r load packages and data loading and organizing, message=FALSE}
+# required packages
+library(tidyverse)
+library(lme4)
+library(MuMIn)
+library(RColorBrewer)
+library(here)
+library(arm)
+library(performance)
+
+# load data
+feed_behav<-"behavior_data.csv"
+feed_behav <- here("data/clean_data", feed_behav)
+feed_behav <- read_csv(feed_behav,
+                na = c("", "NA"))
+
+
+# change feeding behavior to be a factor
+feed_behav$feeding_behavior<-as.factor(feed_behav$feeding_behavior)
+
+# create a summary table to view species counts
+feed_behav_sum<-feed_behav %>%
+    group_by(Subject) %>%
+  summarize(counts = length(Subject))
+
+feed_behav_sum_species<-feed_behav %>%
+    group_by(Subject,feeding_behavior) %>%
+  summarize(feeding_count = length(Subject))
+
+sum_species<-feed_behav_sum_species %>%
+    group_by(Subject)  %>%
+  summarize(total_count = sum(feeding_count))
+
+
+# group by video as well as all other variables interest to account for the effect of video segment
+feed_behav<-feed_behav %>%
+  group_by(ObservationID,
+           Subject,
+           habitat_type,
+           Site,
+           visibility,
+           vertical_distribution,
+           feeding_behavior,
+           eelgrass_algae_bare)%>%
+  summarize(counts = length(Subject))
+
+# subset into vertical functional groups for analysis
+pelagic<-filter(.data =feed_behav,vertical_distribution == "pelagic/free swimming")
+  
+demersal<-filter(.data =feed_behav,vertical_distribution == "demersal")
+  
+benthic<-filter(.data =feed_behav,vertical_distribution == "benthic")  
+
+```
+
+
+
+# Pelagic organisms model
+```{r pelagic model selection}
+
+# determine random error structure
+pelagic_model_no_random <- glm(feeding_behavior ~ habitat_type + eelgrass_algae_bare + visibility, data = pelagic, family = binomial)
+
+
+pelagic_model_with_random <- glmer(feeding_behavior ~ habitat_type + eelgrass_algae_bare + visibility + (1 | Site), data = pelagic, family = binomial)
+
+
+model.sel(pelagic_model_no_random,pelagic_model_with_random)
+# random effect of site improves model performance. Will proceed with site in all models.
+
+# perform full model selection 
+options(na.action = "na.fail") 
+
+full_model_pelagic <- glmer(feeding_behavior ~ habitat_type + eelgrass_algae_bare + visibility + (1 | Site), data = pelagic, family = binomial)
+
+
+
+ms1 <- dredge(global.model = full_model_pelagic, evaluate = TRUE,fixed = c("habitat_type","Site"))
+
+# top pelagic model
+top_model_pelagic<-full_model_pelagic <- glmer(feeding_behavior ~ habitat_type + eelgrass_algae_bare + (1 | Site), data = pelagic, family = binomial)
+
+```
+
+pelagic diagnostics
+```{r pelagic diagnostics}
+## plot resids vs fitted
+plot(fitted(top_model_pelagic), residuals(top_model_pelagic), pch = 16,
+     xlab = "Fitted", ylab = "Residuals",
+     main = "Residuals vs fitted")
+abline(h=0, lty = "dashed")
+
+qqplot(fitted(top_model_pelagic), residuals(top_model_pelagic))
+
+
+binnedplot(fitted(top_model_pelagic), residuals(top_model_pelagic), las = 1, pch = 16,
+     ylab = "Residuals", xlab = "Fitted values",
+     main = "")
+
+## goodness of fit test
+## residuals
+ee <- residuals(top_model_pelagic, type = "response")
+## fitted values
+y_hat <- fitted(top_model_pelagic)
+## standardized residuals
+rr <- ee / (y_hat * (1 - y_hat))
+## test stat
+x2 <- sum(rr)
+nn<-392
+## chi^2 test
+pchisq(x2, nn - length(coef(top_model_pelagic)) - 1, lower.tail = FALSE)
+# p value is large so we detect no lack of fit
+
+r2_nakagawa(top_model_pelagic)
+
+```
+
+
+
+# Demersal organisms model
+```{r demersal model selection}
+
+# determine random error structure
+demersal_model_no_random <- glm(feeding_behavior ~ habitat_type + eelgrass_algae_bare + visibility, data = demersal, family = binomial)
+
+
+demersal_model_with_random <- glmer(feeding_behavior ~ habitat_type + eelgrass_algae_bare + visibility + (1 | Site), data = demersal, family = binomial)
+
+
+model.sel(demersal_model_no_random,demersal_model_with_random)
+# random effect of site decreases model performance. Will proceed without site in all models.
+
+
+# perform full model selection 
+options(na.action = "na.fail") 
+
+full_model_demersal <- glm(feeding_behavior ~ habitat_type + eelgrass_algae_bare + visibility, data = demersal, family = binomial)
+
+
+
+ms2 <- dredge(global.model = full_model_demersal, evaluate = TRUE,fixed = "habitat_type")
+
+# top demersal model
+top_model_demersal <- glm(feeding_behavior ~ habitat_type, data = demersal, family = binomial)
+
+```
+
+demersal diagnostics
+```{r demersal diagnostics}
+## plot resids vs fitted
+plot(fitted(top_model_demersal), residuals(top_model_demersal), pch = 16,
+     xlab = "Fitted", ylab = "Residuals",
+     main = "Residuals vs fitted")
+abline(h=0, lty = "dashed")
+
+qqplot(fitted(top_model_demersal), residuals(top_model_demersal))
+
+
+binnedplot(fitted(top_model_demersal), residuals(top_model_demersal), las = 1, pch = 16,
+     ylab = "Residuals", xlab = "Fitted values",
+     main = "")
+
+## goodness of fit test
+## residuals
+ee <- residuals(top_model_demersal, type = "response")
+## fitted values
+y_hat <- fitted(top_model_demersal)
+## standardized residuals
+rr <- ee / (y_hat * (1 - y_hat))
+## test stat
+x2 <- sum(rr)
+nn<-269
+## chi^2 test
+pchisq(x2, nn - length(coef(top_model_demersal)) - 1, lower.tail = FALSE)
+# p value is large so we detect no lack of fit
+
+# calcuate R^2
+
+
+r2_coxsnell(top_model_demersal)
+```
+
+
+
+# benthic organisms model
+```{r benthic model selection}
+
+# determine random error structure
+benthic_model_no_random <- glm(feeding_behavior ~ habitat_type + eelgrass_algae_bare + visibility, data = benthic, family = binomial)
+
+
+benthic_model_with_random <- glmer(feeding_behavior ~ habitat_type + eelgrass_algae_bare + visibility + (1 | Site), data = benthic, family = binomial)
+
+
+model.sel(benthic_model_no_random,benthic_model_with_random)
+# random effect of site decreases model performance. Will proceed without site in all models.
+
+
+# perform full model selection 
+options(na.action = "na.fail") 
+
+full_model_benthic <- glm(feeding_behavior ~ habitat_type + eelgrass_algae_bare + visibility, data = benthic, family = binomial)
+
+
+
+ms3 <- dredge(global.model = full_model_benthic, evaluate = TRUE,fixed = "habitat_type")
+
+# top benthic model
+top_model_benthic <- glm(feeding_behavior ~ habitat_type, data = benthic, family = binomial)
+
+```
+
+benthic diagnostics
+```{r benthic diagnostics}
+## plot resids vs fitted
+plot(fitted(top_model_benthic), residuals(top_model_benthic), pch = 16,
+     xlab = "Fitted", ylab = "Residuals",
+     main = "Residuals vs fitted")
+abline(h=0, lty = "dashed")
+
+qqplot(fitted(top_model_benthic), residuals(top_model_benthic))
+
+binnedplot(fitted(top_model_benthic), residuals(top_model_benthic), las = 1, pch = 16,
+     ylab = "Residuals", xlab = "Fitted values",
+     main = "")
+
+
+## goodness of fit test
+## residuals
+ee <- residuals(top_model_benthic, type = "response")
+## fitted values
+y_hat <- fitted(top_model_benthic)
+## standardized residuals
+rr <- ee / (y_hat * (1 - y_hat))
+## test stat
+x2 <- sum(rr)
+nn<-184
+## chi^2 test
+pchisq(x2, nn - length(coef(top_model_benthic)) - 1, lower.tail = FALSE)
+# p value is large so we detect no lack of fit
+
+
+# calcuate R^2
+r2_coxsnell(top_model_benthic)
+
+```
+
+
+
+# plots of behavior across different habitats
+
+model coefficients plots benthic
+```{r model coefficients plots benthic}
+
+benthic_model_top <- glm(feeding_behavior ~ 0 + habitat_type + visibility + eelgrass_algae_bare, data = benthic, family = binomial)
+
+summary(benthic_model_top)$coefficients
+
+# benthic
+
+#                                       
+#                                    Estimate  Std. Error
+# habitat_typeeelgrass              -2.2085646    1.418819
+# habitat_typesediment               0.3460405    1.143079
+# habitat_typeFlipbag               -1.7925503    1.247346
+# habitat_typeClam                  -0.5452848    1.294661 
+# habitat_typeOyster OnBottom       -1.6230180    1.371282 
+# 
+# eelgrass_algae_barealgae          -0.5452848    1.2946614 
+# eelgrass_algae_barebare           -1.0105410    0.3946949 
+# eelgrass_algae_barebare/algae     -2.5598736    1.3522715
+# eelgrass_algae_bareeelgrass        2.3462651    1.1650095  
+# eelgrass_algae_bareeelgrass/algae 16.8133337 1029.1219444  
+# 
+# visibilityhigh                    -0.5452848    1.2946614
+# visibilitylow                     -2.9637975    1.3877053
+# visibilitymedium                  -1.4121614    1.0548769 
+
+b_estimate<-c(-2.2085646,0.3460405,-1.7925503,-0.5452848,-1.6230180)
+error<-c(1.418819,1.143079,1.247346,1.294661,1.371282)
+b_se_lower<-b_estimate-error*2
+b_se_upper<-b_estimate + error*2
+
+b_habitat<-c('eelgrass','mud flat','oyster flipbag','clam nets','oyster on bottom')
+b_farm<-c('unfarmed habitat','unfarmed habitat','farm habitat','farm habitat','farm habitat')
+benthic_mod_plot<-data.frame(b_estimate,b_habitat,b_farm)
+
+
+benthic_mod_plot$b_habitat <- factor(benthic_mod_plot$b_habitat, 
+                         levels=c("eelgrass",
+                                  "mud flat",
+                                  "oyster flipbag",
+                                  "clam nets",
+                                  "oyster on bottom"))
+
+benthic_mod_plot$b_farm <- factor(benthic_mod_plot$b_farm, 
+                         levels=c("unfarmed habitat",
+                                  "farm habitat"))
+# make figure 4
+p1<-ggplot(data = benthic_mod_plot,aes(x=b_habitat,y=b_estimate,colour=b_farm))+
+  geom_point(size=4)+
+  scale_color_brewer(palette = "Set2")+
+  theme_classic()+ 
+  labs(x="habitat type",
+       y="relative feeding proportion",
+       title = "benthic organisms")+
+  guides(color=guide_legend(title="habitat category"))+
+  geom_errorbar(aes(ymin=b_se_lower,ymax=b_se_upper,color=b_farm,width=0.2))
+
+ggsave(here("figures", "fig_04_benthic_model.png"),width = 7,height = 7,units = "in")
+```
+
+
+model coefficients plots demersal
+```{r model coefficients plots demersal}
+
+demersal_model_top <- glm(feeding_behavior ~ 0 + habitat_type, data = demersal, family = binomial)
+
+summary(demersal_model_top)$coefficients
+
+
+# demersal  
+#                               Estimate Std. Error
+# habitat_typeeelgrass        -2.2823824  0.4694765
+# habitat_typesediment        -0.6931472  0.2970443
+# habitat_typeFlipbag         -0.7282385  0.2301210
+# habitat_typeClam            -2.3272777  0.5238227
+# habitat_typeOyster OnBottom -2.3025851  0.6055300
+
+d_habitat<-c('eelgrass','mud flat','oyster flipbag','clam nets','oyster on bottom')
+
+d_estimate<-c(-2.2823824, -0.6931472, -0.7282385, -2.3272777, -2.3025851)
+error<-c(0.4694765,0.2970443,0.2301210,0.5238227,0.6055300)
+d_se_lower<-d_estimate-error*2
+d_se_upper<-d_estimate + error*2
+
+d_habitat<-c('eelgrass','mud flat','oyster flipbag','clam nets','oyster on bottom')
+d_farm<-c('unfarmed habitat','unfarmed habitat','farm habitat','farm habitat','farm habitat')
+demersal_mod_plot<-data.frame(d_estimate,d_habitat,d_farm)
+
+
+demersal_mod_plot$d_habitat <- factor(demersal_mod_plot$d_habitat, 
+                         levels=c("eelgrass",
+                                  "mud flat",
+                                  "oyster flipbag",
+                                  "clam nets",
+                                  "oyster on bottom"))
+
+demersal_mod_plot$d_farm <- factor(demersal_mod_plot$d_farm, 
+                         levels=c("unfarmed habitat",
+                                  "farm habitat"))
+# make figure 3
+p2<-ggplot(data = demersal_mod_plot,aes(x=d_habitat,y=d_estimate,colour=d_farm))+
+  geom_point(size=4)+
+  scale_color_brewer(palette = "Set2")+
+  theme_classic()+ 
+  labs(x="habitat type",
+       y="relative feeding proportion",
+       title = "demersal organisms")+
+  guides(color=guide_legend(title="habitat category"))+
+  geom_errorbar(aes(ymin=d_se_lower,ymax=d_se_upper,color=d_farm,width=0.2))
+
+ggsave(here("figures", "fig_03_demersal_model.png"),width = 7,height = 7,units = "in")
+```
+
+model coefficients plots pelagic
+```{r model coefficients plots pelagic}
+
+
+pelagic_model_top<- glmer(feeding_behavior ~ 0 + eelgrass_algae_bare + habitat_type + (1 | Site), data = pelagic, family = binomial)
+
+summary(pelagic_model_top)$coefficients
+
+# pelagic
+#                                 Estimate Std. Error 
+# habitat_typeeelgrass          -0.58956672  0.6126456
+# habitat_typesediment          -0.79780051  0.4746709 
+# habitat_typeFlipbag           -0.38301527  0.4008872 
+# habitat_typeClam              -0.05703813  0.4962638 
+# habitat_typeOyster OnBottom   -0.69372562  0.6052590 
+# 
+# eelgrass_algae_barealgae      -0.05696037  0.4962427 
+# eelgrass_algae_barebare       -0.72450949  0.4120620 
+# eelgrass_algae_barebare/algae -1.42723666  0.6053752 
+# eelgrass_algae_bareeelgrass   -0.40891847  0.5659252 
+
+
+p_estimate<-c(-0.58956672,-0.79780051,-0.38301527,-0.05703813,-0.69372562)
+error<-c(0.6126456,0.4746709,0.4008872,0.4962638,0.6052590)
+p_se_lower<-p_estimate-error*2
+p_se_upper<-p_estimate + error*2
+
+p_habitat<-c('eelgrass', 'mud flat', 'oyster flipbag', 'clam nets' , 'oyster on bottom')
+p_farm<-c('unfarmed habitat','unfarmed habitat','farm habitat','farm habitat','farm habitat')
+pelagic_mod_plot<-data.frame(p_estimate,p_habitat,p_farm)
+
+
+pelagic_mod_plot$p_habitat <- factor(pelagic_mod_plot$p_habitat, 
+                         levels=c("eelgrass",
+                                  "mud flat",
+                                  "oyster flipbag",
+                                  "clam nets",
+                                  "oyster on bottom"))
+
+pelagic_mod_plot$p_farm <- factor(pelagic_mod_plot$p_farm, 
+                         levels=c("unfarmed habitat",
+                                  "farm habitat"))
+# make figure 2
+ggplot(data = pelagic_mod_plot,aes(x=p_habitat,y=p_estimate,colour=p_farm))+
+  geom_point(size=4)+
+  scale_color_brewer(palette = "Set2")+
+  theme_classic()+ 
+  labs(x="habitat type",
+       y="relative feeding proportion",
+       title = "pelagic organisms")+
+  guides(color=guide_legend(title="habitat category"))+
+  geom_errorbar(aes(ymin=p_se_lower,ymax=p_se_upper,color=p_farm,width=0.2))
+
+ggsave(here( "figures", "fig_02_pelagic_model.png"),width = 7,height = 7,units = "in")
+```
+
+
+

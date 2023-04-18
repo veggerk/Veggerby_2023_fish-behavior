@@ -1,0 +1,60 @@
+---
+title: "equations"
+author: "Karl Veggerby"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+
+library(equatiomatic)
+library(tidyverse)
+library(here)
+library(lme4)
+
+```
+
+
+```{r load data, include=FALSE}
+
+# load data
+feed_behav<-"behavior_data.csv"
+feed_behav <- here("data/clean_data", feed_behav)
+feed_behav <- read_csv(feed_behav,
+                na = c("", "NA"))
+
+
+# change feeding behavior to be a factor
+feed_behav$feeding_behavior<-as.factor(feed_behav$feeding_behavior)
+
+# group by video as well as all other variables interest to account for the effect of video segment
+feed_behav<-feed_behav %>%
+  group_by(ObservationID,
+           Subject,
+           habitat_type,
+           Site,
+           visibility,
+           vertical_distribution,
+           feeding_behavior,
+           eelgrass_algae_bare)%>%
+  summarize(counts = length(Subject))
+
+# subset into vertical functional groups for analysis
+pelagic<-filter(.data =feed_behav,vertical_distribution == "pelagic/free swimming")
+  
+demersal<-filter(.data =feed_behav,vertical_distribution == "demersal")
+  
+benthic<-filter(.data =feed_behav,vertical_distribution == "benthic")  
+
+```
+
+
+
+```{r pelagic}
+# full pelagic model
+full_model_pelagic <- glmer(feeding_behavior ~ habitat_type + eelgrass_algae_bare + visibility + (1 | Site), data = pelagic, family = binomial)
+
+# write equation
+extract_eq(full_model_pelagic)
+```
