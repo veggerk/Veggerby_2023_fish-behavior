@@ -39,6 +39,10 @@ feed_behav_sum_species<-feed_behav %>%
     group_by(Subject,feeding_behavior) %>%
   summarize(feeding_count = length(Subject))
 
+feed_behav_sum_groups<-feed_behav %>%
+    group_by(vertical_distribution,feeding_behavior) %>%
+  summarize(feeding_count = length(Subject))
+
 sum_species<-feed_behav_sum_species %>%
     group_by(Subject)  %>%
   summarize(total_count = sum(feeding_count))
@@ -314,8 +318,8 @@ p1<-ggplot(data = benthic_mod_plot,aes(x=b_habitat,y=b_estimate,colour=b_farm))+
   scale_color_brewer(palette = "Set2")+
   theme_classic()+ 
   labs(x="habitat type",
-       y="relative feeding proportion",
-       title = "benthic organisms")+
+       y="relative feeding probability",
+       title = "crabs")+
   guides(color=guide_legend(title="habitat category"))+
   geom_errorbar(aes(ymin=b_se_lower,ymax=b_se_upper,color=b_farm,width=0.2))
 
@@ -367,8 +371,8 @@ p2<-ggplot(data = demersal_mod_plot,aes(x=d_habitat,y=d_estimate,colour=d_farm))
   scale_color_brewer(palette = "Set2")+
   theme_classic()+ 
   labs(x="habitat type",
-       y="relative feeding proportion",
-       title = "demersal organisms")+
+       y="relative feeding probability",
+       title = "demersal fish")+
   guides(color=guide_legend(title="habitat category"))+
   geom_errorbar(aes(ymin=d_se_lower,ymax=d_se_upper,color=d_farm,width=0.2))
 
@@ -423,8 +427,8 @@ ggplot(data = pelagic_mod_plot,aes(x=p_habitat,y=p_estimate,colour=p_farm))+
   scale_color_brewer(palette = "Set2")+
   theme_classic()+ 
   labs(x="habitat type",
-       y="relative feeding proportion",
-       title = "pelagic organisms")+
+       y="relative feeding probability",
+       title = "pelagic fish")+
   guides(color=guide_legend(title="habitat category"))+
   geom_errorbar(aes(ymin=p_se_lower,ymax=p_se_upper,color=p_farm,width=0.2))
 

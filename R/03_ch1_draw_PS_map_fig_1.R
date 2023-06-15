@@ -141,6 +141,24 @@ puget_sound<-ggplot(usa_spdf_fort, aes(x = long, y = lat, group = group)) +
          y = 47.6,
          size = 5,
          color = "black")+ 
+  annotate("text", 
+           label = "North Puget Sound",
+           x = -122.3, 
+           y = 48.83,
+           size = 4,
+           color = "black")+ 
+  annotate("text", 
+           label = "South Puget Sound",
+           x = -122.708, 
+           y = 47,
+           size = 4,
+           color = "black")+ 
+  annotate("text", 
+           label = "Hood Canal",
+           x = -123.078546, 
+           y = 47.78,
+           size = 4,
+           color = "black")+ 
   annotate("point", 
            x = -122.32, 
            y = 47.6,
@@ -161,7 +179,14 @@ annotation_north_arrow(
        wrap_elements(mud_flat)/
        wrap_elements(flipbag)/
        wrap_elements(clam)/
-       wrap_elements(oyster_on_bot))
+       wrap_elements(oyster_on_bot))+ 
+    plot_layout(tag_level = 'new') +
+    plot_annotation(tag_levels = list(c(' ','EG','MD',"FB","CL","OB"))) & 
+    theme(plot.tag.position = c(0.15, 0.5) ,
+          plot.tag = element_text(size = 14, hjust = 0, vjust = -1))
+  
+  
+  
   
 ## save the combined file as figure 1
   ggsave(filename = file.path(fig_dir, "fig_01_PS_map.png"), 
