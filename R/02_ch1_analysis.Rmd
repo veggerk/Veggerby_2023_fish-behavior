@@ -39,6 +39,10 @@ feed_behav_sum_species<-feed_behav %>%
     group_by(Subject,feeding_behavior) %>%
   summarize(feeding_count = length(Subject))
 
+feed_behav_sum_groups<-feed_behav %>%
+    group_by(vertical_distribution,feeding_behavior) %>%
+  summarize(feeding_count = length(Subject))
+
 sum_species<-feed_behav_sum_species %>%
     group_by(Subject)  %>%
   summarize(total_count = sum(feeding_count))
@@ -102,29 +106,44 @@ plot(fitted(top_model_pelagic), residuals(top_model_pelagic), pch = 16,
      main = "Residuals vs fitted")
 abline(h=0, lty = "dashed")
 
+
+# QQplot look for unusual points
 qqplot(fitted(top_model_pelagic), residuals(top_model_pelagic))
 
 
+# Deviance residuals: Plot the binned fitted versus residuals
 binnedplot(fitted(top_model_pelagic), residuals(top_model_pelagic), las = 1, pch = 16,
      ylab = "Residuals", xlab = "Fitted values",
      main = "")
 
-## goodness of fit test
-## residuals
-ee <- residuals(top_model_pelagic, type = "response")
-## fitted values
-y_hat <- fitted(top_model_pelagic)
-## standardized residuals
-rr <- ee / (y_hat * (1 - y_hat))
-## test stat
-x2 <- sum(rr)
-nn<-392
-## chi^2 test
-pchisq(x2, nn - length(coef(top_model_pelagic)) - 1, lower.tail = FALSE)
-# p value is large so we detect no lack of fit
 
+# r^2
 r2_nakagawa(top_model_pelagic)
 
+
+# overdispersion test
+nn<-392
+
+## overdispersion parameter
+c_hat <- deviance(top_model_pelagic) / (nn - 2)
+## re-scaled estimates
+
+## 1.147118
+# dispersion parameter close to 1
+
+
+## goodness of fit test
+
+## Pearson's X^2 statistic
+nn<-392
+X2 <- sum(((as.numeric(pelagic$feeding_behavior)-1) - fitted(top_model_pelagic))^2 / fitted(top_model_pelagic))
+## likelihood ratio test
+pchisq(X2, df = nn - length(coef(top_model_pelagic)),
+lower.tail = FALSE)
+
+# 1
+# null Ho is that the model is correctly specified 
+# p value is large so we detect no lack of fit
 ```
 
 
@@ -165,31 +184,43 @@ plot(fitted(top_model_demersal), residuals(top_model_demersal), pch = 16,
      main = "Residuals vs fitted")
 abline(h=0, lty = "dashed")
 
+
+# QQplot look for unusual points
 qqplot(fitted(top_model_demersal), residuals(top_model_demersal))
 
 
+# Deviance residuals: Plot the binned fitted versus residuals
 binnedplot(fitted(top_model_demersal), residuals(top_model_demersal), las = 1, pch = 16,
      ylab = "Residuals", xlab = "Fitted values",
      main = "")
 
-## goodness of fit test
-## residuals
-ee <- residuals(top_model_demersal, type = "response")
-## fitted values
-y_hat <- fitted(top_model_demersal)
-## standardized residuals
-rr <- ee / (y_hat * (1 - y_hat))
-## test stat
-x2 <- sum(rr)
-nn<-269
-## chi^2 test
-pchisq(x2, nn - length(coef(top_model_demersal)) - 1, lower.tail = FALSE)
-# p value is large so we detect no lack of fit
 
 # calcuate R^2
-
-
 r2_coxsnell(top_model_demersal)
+
+
+# overdispersion test
+
+nn<-269
+## overdispersion parameter
+c_hat <- deviance(top_model_demersal) / (nn - 2)
+## re-scaled estimates
+faraway::sumary(top_model_demersal, dispersion = c_hat)
+## 0.95085
+
+# dispersion parameter less than 1
+
+
+## Pearson's X^2 statistic
+nn<-269
+X2 <- sum(((as.numeric(demersal$feeding_behavior)-1) - fitted(top_model_demersal))^2 / fitted(top_model_demersal))
+## likelihood ratio test
+pchisq(X2, df = nn - length(coef(top_model_demersal)),
+lower.tail = FALSE)
+
+# 0.9918447
+# null Ho is that the model is correctly specified 
+# p value is large so we detect no lack of fit
 ```
 
 
@@ -218,7 +249,7 @@ full_model_benthic <- glm(feeding_behavior ~ habitat_type + eelgrass_algae_bare 
 ms3 <- dredge(global.model = full_model_benthic, evaluate = TRUE,fixed = "habitat_type")
 
 # top benthic model
-top_model_benthic <- glm(feeding_behavior ~ habitat_type, data = benthic, family = binomial)
+top_model_benthic <- glm(feeding_behavior ~ habitat_type + visibility + eelgrass_algae_bare, data = benthic, family = binomial)
 
 ```
 
@@ -230,31 +261,43 @@ plot(fitted(top_model_benthic), residuals(top_model_benthic), pch = 16,
      main = "Residuals vs fitted")
 abline(h=0, lty = "dashed")
 
+
+# QQplot look for unusual points
 qqplot(fitted(top_model_benthic), residuals(top_model_benthic))
 
+
+# Deviance residuals: Plot the binned fitted versus residuals
 binnedplot(fitted(top_model_benthic), residuals(top_model_benthic), las = 1, pch = 16,
      ylab = "Residuals", xlab = "Fitted values",
      main = "")
 
 
-## goodness of fit test
-## residuals
-ee <- residuals(top_model_benthic, type = "response")
-## fitted values
-y_hat <- fitted(top_model_benthic)
-## standardized residuals
-rr <- ee / (y_hat * (1 - y_hat))
-## test stat
-x2 <- sum(rr)
-nn<-184
-## chi^2 test
-pchisq(x2, nn - length(coef(top_model_benthic)) - 1, lower.tail = FALSE)
-# p value is large so we detect no lack of fit
-
-
 # calcuate R^2
 r2_coxsnell(top_model_benthic)
 
+
+# overdispersion test
+
+nn<-184
+## overdispersion parameter
+c_hat <- deviance(top_model_benthic) / (nn - 2)
+## re-scaled estimates
+faraway::sumary(top_model_benthic, dispersion = c_hat)
+## 0.7407814
+
+# dispersion parameter less than 1
+
+
+## Pearson's X^2 statistic
+nn<-184
+X2 <- sum(((as.numeric(benthic$feeding_behavior)-1) - fitted(top_model_benthic))^2 / fitted(top_model_benthic))
+## likelihood ratio test
+pchisq(X2, df = nn - length(coef(top_model_benthic)),
+lower.tail = FALSE)
+
+# 0.5764506
+# null Ho is that the model is correctly specified 
+# p value is large so we detect no lack of fit
 ```
 
 
@@ -314,8 +357,8 @@ p1<-ggplot(data = benthic_mod_plot,aes(x=b_habitat,y=b_estimate,colour=b_farm))+
   scale_color_brewer(palette = "Set2")+
   theme_classic()+ 
   labs(x="habitat type",
-       y="relative feeding proportion",
-       title = "benthic organisms")+
+       y="relative feeding probability",
+       title = "crabs")+
   guides(color=guide_legend(title="habitat category"))+
   geom_errorbar(aes(ymin=b_se_lower,ymax=b_se_upper,color=b_farm,width=0.2))
 
@@ -367,8 +410,8 @@ p2<-ggplot(data = demersal_mod_plot,aes(x=d_habitat,y=d_estimate,colour=d_farm))
   scale_color_brewer(palette = "Set2")+
   theme_classic()+ 
   labs(x="habitat type",
-       y="relative feeding proportion",
-       title = "demersal organisms")+
+       y="relative feeding probability",
+       title = "demersal fish")+
   guides(color=guide_legend(title="habitat category"))+
   geom_errorbar(aes(ymin=d_se_lower,ymax=d_se_upper,color=d_farm,width=0.2))
 
@@ -423,8 +466,8 @@ ggplot(data = pelagic_mod_plot,aes(x=p_habitat,y=p_estimate,colour=p_farm))+
   scale_color_brewer(palette = "Set2")+
   theme_classic()+ 
   labs(x="habitat type",
-       y="relative feeding proportion",
-       title = "pelagic organisms")+
+       y="relative feeding probability",
+       title = "pelagic fish")+
   guides(color=guide_legend(title="habitat category"))+
   geom_errorbar(aes(ymin=p_se_lower,ymax=p_se_upper,color=p_farm,width=0.2))
 
