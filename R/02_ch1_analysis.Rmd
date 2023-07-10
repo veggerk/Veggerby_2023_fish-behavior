@@ -321,20 +321,53 @@ summary(benthic_model_top)$coefficients
 # habitat_typeClam                  -0.5452848    1.294661 
 # habitat_typeOyster OnBottom       -1.6230180    1.371282 
 # 
+# eelgrass_algae_bareeelgrass        2.3462651    1.1650095 
 # eelgrass_algae_barealgae          -0.5452848    1.2946614 
-# eelgrass_algae_barebare           -1.0105410    0.3946949 
 # eelgrass_algae_barebare/algae     -2.5598736    1.3522715
-# eelgrass_algae_bareeelgrass        2.3462651    1.1650095  
-# eelgrass_algae_bareeelgrass/algae 16.8133337 1029.1219444  
+# eelgrass_algae_barebare           -1.0105410    0.3946949 
+
 # 
 # visibilityhigh                    -0.5452848    1.2946614
 # visibilitylow                     -2.9637975    1.3877053
 # visibilitymedium                  -1.4121614    1.0548769 
 
-b_estimate<-c(-2.2085646,0.3460405,-1.7925503,-0.5452848,-1.6230180)
-error<-c(1.418819,1.143079,1.247346,1.294661,1.371282)
-b_se_lower<-b_estimate-error*2
-b_se_upper<-b_estimate + error*2
+b_estimate_cover<-c(plogis(2.3462651),plogis(-0.5452848),plogis(-2.5598736),plogis(-1.0105410))
+
+b_se_lower_cover<-c(plogis(2.3462651-2*1.1650095),
+plogis(-0.5452848-2*1.2946614),
+plogis(-2.5598736-2*1.3522715),
+plogis(-1.0105410-2*0.3946949))
+
+b_se_upper_cover<-c(plogis(2.3462651+2*1.1650095),
+plogis(-0.5452848+2*1.2946614),
+plogis(-2.5598736+2*1.3522715),
+plogis(-1.0105410+2*0.3946949))
+
+
+b_estimate_vis<-c(plogis(-0.5452848),plogis(-1.4121614),plogis(-2.9637975))
+
+b_se_lower_vis<-c(plogis(-0.5452848-2*1.2946614),
+plogis(-1.4121614-2*1.0548769),
+plogis(-2.9637975-2*1.3877053))
+
+b_se_upper_vis<-c(plogis(-0.5452848+2*1.2946614),
+plogis(-1.4121614+2*1.0548769),
+plogis(-2.9637975+2*1.3877053))
+
+# convert out of logit space
+b_estimate<-c(plogis(-2.2085646),plogis(0.3460405),plogis(-1.7925503),plogis(-0.5452848),plogis(-1.6230180))
+
+b_se_lower<-c(plogis(-2.2085646-2*1.418819),
+plogis(0.3460405-2*1.143079),
+plogis(-1.7925503-2*1.247346),
+plogis(-0.5452848-2*1.294661),
+plogis(-1.6230180-2*1.371282))
+
+b_se_upper<-c(plogis(-2.2085646+2*1.418819),
+plogis(0.3460405+2*1.143079),
+plogis(-1.7925503+2*1.247346),
+plogis(-0.5452848+2*1.294661),
+plogis(-1.6230180+2*1.371282))
 
 b_habitat<-c('eelgrass','mud flat','oyster flipbag','clam nets','oyster on bottom')
 b_farm<-c('unfarmed habitat','unfarmed habitat','farm habitat','farm habitat','farm habitat')
@@ -357,8 +390,12 @@ p1<-ggplot(data = benthic_mod_plot,aes(x=b_habitat,y=b_estimate,colour=b_farm))+
   scale_color_brewer(palette = "Set2")+
   theme_classic()+ 
   labs(x="habitat type",
-       y="relative feeding probability",
+       y="feeding probability",
        title = "crabs")+
+  scale_y_continuous(breaks = c(0,0.25,0.5,0.75,1.0),
+                     labels = c(0,0.25,0.5,0.75,1.0),
+                     expand = c(0, 0),
+                     limits = c(0,1))+
   guides(color=guide_legend(title="habitat category"))+
   geom_errorbar(aes(ymin=b_se_lower,ymax=b_se_upper,color=b_farm,width=0.2))
 
@@ -384,10 +421,20 @@ summary(demersal_model_top)$coefficients
 
 d_habitat<-c('eelgrass','mud flat','oyster flipbag','clam nets','oyster on bottom')
 
-d_estimate<-c(-2.2823824, -0.6931472, -0.7282385, -2.3272777, -2.3025851)
-error<-c(0.4694765,0.2970443,0.2301210,0.5238227,0.6055300)
-d_se_lower<-d_estimate-error*2
-d_se_upper<-d_estimate + error*2
+# convert out of logit space
+d_estimate<-c(plogis(-2.2823824),plogis(-0.6931472),plogis(-0.7282385),plogis(-2.3272777),plogis(-2.3025851))
+
+d_se_lower<-c(plogis(-2.2823824-2*0.4694765),
+plogis(-0.6931472-2*0.2970443),
+plogis(-0.7282385-2*0.2301210),
+plogis(-2.3272777-2*0.5238227),
+plogis(-2.3025851-2*0.6055300))
+
+d_se_upper<-c(plogis(-2.2823824+2*0.4694765),
+plogis(-0.6931472+2*0.2970443),
+plogis(-0.7282385+2*0.2301210),
+plogis(-2.3272777+2*0.5238227),
+plogis(-2.3025851+2*0.6055300))
 
 d_habitat<-c('eelgrass','mud flat','oyster flipbag','clam nets','oyster on bottom')
 d_farm<-c('unfarmed habitat','unfarmed habitat','farm habitat','farm habitat','farm habitat')
@@ -410,8 +457,12 @@ p2<-ggplot(data = demersal_mod_plot,aes(x=d_habitat,y=d_estimate,colour=d_farm))
   scale_color_brewer(palette = "Set2")+
   theme_classic()+ 
   labs(x="habitat type",
-       y="relative feeding probability",
+       y="feeding probability",
        title = "demersal fish")+
+    scale_y_continuous(breaks = c(0,0.25,0.5,0.75,1.0),
+                     labels = c(0,0.25,0.5,0.75,1.0),
+                     expand = c(0, 0),
+                     limits = c(0,1))+
   guides(color=guide_legend(title="habitat category"))+
   geom_errorbar(aes(ymin=d_se_lower,ymax=d_se_upper,color=d_farm,width=0.2))
 
@@ -439,11 +490,37 @@ summary(pelagic_model_top)$coefficients
 # eelgrass_algae_barebare/algae -1.42723666  0.6053752 
 # eelgrass_algae_bareeelgrass   -0.40891847  0.5659252 
 
+p_estimate_cover<-c(plogis(-0.05696037),plogis(-0.72450949),plogis(-1.42723666),plogis(-0.40891847))
 
-p_estimate<-c(-0.58956672,-0.79780051,-0.38301527,-0.05703813,-0.69372562)
-error<-c(0.6126456,0.4746709,0.4008872,0.4962638,0.6052590)
-p_se_lower<-p_estimate-error*2
-p_se_upper<-p_estimate + error*2
+p_se_lower_cover<-c(plogis(-0.05696037-2*0.4962427),
+plogis(-0.72450949-2*0.4120620),
+plogis(-1.42723666-2*0.6053752),
+plogis(-0.40891847-2*0.5659252))
+
+p_se_upper_cover<-c(plogis(-0.05696037+2*0.4962427),
+plogis(-0.72450949+2*0.4120620),
+plogis(-1.42723666+2*0.6053752),
+plogis(-0.40891847+2*0.5659252))
+
+
+
+
+
+# convert out of logit space
+p_estimate<-c(plogis(-0.58956672),plogis(-0.79780051),plogis(-0.38301527),plogis(-0.05703813),plogis(-0.69372562))
+
+p_se_lower<-c(plogis(-0.58956672-2*0.6126456),
+plogis(-0.79780051-2*0.4746709),
+plogis(-0.38301527-2*0.4008872),
+plogis(-0.05703813-2*0.4962638),
+plogis(-0.69372562-2*0.6052590))
+
+p_se_upper<-c(plogis(-0.58956672+2*0.6126456),
+plogis(-0.79780051+2*0.4746709),
+plogis(-0.38301527+2*0.4008872),
+plogis(-0.05703813+2*0.4962638),
+plogis(-0.69372562+2*0.6052590))
+
 
 p_habitat<-c('eelgrass', 'mud flat', 'oyster flipbag', 'clam nets' , 'oyster on bottom')
 p_farm<-c('unfarmed habitat','unfarmed habitat','farm habitat','farm habitat','farm habitat')
@@ -466,8 +543,12 @@ ggplot(data = pelagic_mod_plot,aes(x=p_habitat,y=p_estimate,colour=p_farm))+
   scale_color_brewer(palette = "Set2")+
   theme_classic()+ 
   labs(x="habitat type",
-       y="relative feeding probability",
+       y="feeding probability",
        title = "pelagic fish")+
+    scale_y_continuous(breaks = c(0,0.25,0.5,0.75,1.0),
+                     labels = c(0,0.25,0.5,0.75,1.0),
+                     expand = c(0, 0),
+                     limits = c(0,1))+
   guides(color=guide_legend(title="habitat category"))+
   geom_errorbar(aes(ymin=p_se_lower,ymax=p_se_upper,color=p_farm,width=0.2))
 
