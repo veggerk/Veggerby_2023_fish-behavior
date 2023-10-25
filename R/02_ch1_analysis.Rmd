@@ -302,6 +302,8 @@ lower.tail = FALSE)
 
 
 
+
+
 # plots of behavior across different habitats
 
 model coefficients plots benthic
@@ -399,7 +401,7 @@ p1<-ggplot(data = benthic_mod_plot,aes(x=b_habitat,y=b_estimate,colour=b_farm))+
   guides(color=guide_legend(title="habitat category"))+
   geom_errorbar(aes(ymin=b_se_lower,ymax=b_se_upper,color=b_farm,width=0.2))
 
-ggsave(here("figures", "fig_04_benthic_model.png"),width = 7,height = 7,units = "in")
+ggsave(here("figures", "fig_05_benthic_model_habitat_type.png"),width = 7,height = 7,units = "in")
 ```
 
 
@@ -466,7 +468,7 @@ p2<-ggplot(data = demersal_mod_plot,aes(x=d_habitat,y=d_estimate,colour=d_farm))
   guides(color=guide_legend(title="habitat category"))+
   geom_errorbar(aes(ymin=d_se_lower,ymax=d_se_upper,color=d_farm,width=0.2))
 
-ggsave(here("figures", "fig_03_demersal_model.png"),width = 7,height = 7,units = "in")
+ggsave(here("figures", "fig_04_demersal_model_habitat_type.png"),width = 7,height = 7,units = "in")
 ```
 
 model coefficients plots pelagic
@@ -552,8 +554,130 @@ ggplot(data = pelagic_mod_plot,aes(x=p_habitat,y=p_estimate,colour=p_farm))+
   guides(color=guide_legend(title="habitat category"))+
   geom_errorbar(aes(ymin=p_se_lower,ymax=p_se_upper,color=p_farm,width=0.2))
 
-ggsave(here( "figures", "fig_02_pelagic_model.png"),width = 7,height = 7,units = "in")
+ggsave(here( "figures", "fig_02_pelagic_model_habitat_type.png"),width = 7,height = 7,units = "in")
+```
+
+
+pelagic model cover type plot
+```{r pelagic model cover type plot}
+
+
+pelagic_model_top<- glmer(feeding_behavior ~ 0 + eelgrass_algae_bare + habitat_type + (1 | Site), data = pelagic, family = binomial)
+
+summary(pelagic_model_top)$coefficients
+
+# pelagic
+# 
+# eelgrass_algae_barebare       -0.72450949  0.4120620 
+# eelgrass_algae_barebare/algae -1.42723666  0.6053752 
+# eelgrass_algae_barealgae      -0.05696037  0.4962427 
+# eelgrass_algae_bareeelgrass   -0.40891847  0.5659252 
+
+
+
+# convert out of logit space
+p_estimate_cover<-c(plogis(-0.72450949),plogis(-1.42723666),plogis(-0.05696037),plogis(-0.40891847))
+
+p_se_lower_cover<-c(plogis(-0.72450949-2*0.4120620),
+plogis(-1.42723666-2*0.6053752),
+plogis(-0.05696037-2*0.4962427),
+plogis(-0.40891847-2*0.5659252))
+
+p_se_upper_cover<-c(plogis(-0.72450949+2*0.4120620),
+plogis(-1.42723666+2*0.6053752),
+plogis(-0.05696037+2*0.4962427),
+plogis(-0.40891847+2*0.5659252))
+
+
+
+p_cover_data<-c('bare', 'bare/algae', 'algae', 'eelgrass')
+pelagic_mod_plot<-data.frame(p_cover_data,p_estimate_cover)
+
+
+pelagic_mod_plot$p_cover_data <- factor(pelagic_mod_plot$p_cover_data, 
+                         levels=c("bare",
+                                  "bare/algae",
+                                  "algae",
+                                  "eelgrass"))
+
+
+
+# make figure 5
+ggplot(data = pelagic_mod_plot,aes(x=p_cover_data,y=p_estimate_cover))+
+  geom_point(size=4)+
+  theme_classic()+ 
+  labs(x="cover type",
+       y="feeding probability",
+       title = "pelagic fish")+
+    scale_y_continuous(breaks = c(0,0.25,0.5,0.75,1.0),
+                     labels = c(0,0.25,0.5,0.75,1.0),
+                     expand = c(0, 0),
+                     limits = c(0,1))+
+ theme(legend.position = "none")+
+  geom_errorbar(aes(ymin=p_se_lower_cover,ymax=p_se_upper_cover,width=0.2))
+
+ggsave(here( "figures", "fig_03_pelagic_model_cover_type.png"),width = 7,height = 7,units = "in")
 ```
 
 
 
+
+
+benthic model cover type plot
+```{r benthic model cover type plot}
+
+
+top_model_benthic <- glm(feeding_behavior ~ 0 + habitat_type + visibility + eelgrass_algae_bare, data = benthic, family = binomial)
+
+summary(top_model_benthic)$coefficients
+
+# benthic
+# 
+# eelgrass_algae_barebare           -1.0105410    0.3946949 
+# eelgrass_algae_barebare/algae     -2.5598736    1.3522715
+# eelgrass_algae_barealgae          -0.5452848    1.2946614 
+# eelgrass_algae_bareeelgrass        2.3462651    1.1650095 
+
+# convert out of logit space
+p_estimate_cover<-c(plogis(-1.0105410),plogis(-2.5598736),plogis(-0.5452848),plogis(2.3462651))
+
+p_se_lower_cover<-c(plogis(-1.0105410-2*0.3946949),
+plogis(-2.5598736-2*1.3522715),
+plogis(-0.5452848-2*1.2946614),
+plogis(2.3462651-2*1.1650095))
+
+p_se_upper_cover<-c(plogis(-1.0105410+2*0.3946949),
+plogis(-2.5598736+2*1.3522715),
+plogis(-0.5452848+2*1.2946614),
+plogis(2.3462651+2*1.1650095))
+
+
+
+p_cover_data<-c('bare', 'bare/algae', 'algae', 'eelgrass')
+pelagic_mod_plot<-data.frame(p_cover_data,p_estimate_cover)
+
+
+pelagic_mod_plot$p_cover_data <- factor(pelagic_mod_plot$p_cover_data, 
+                         levels=c("bare",
+                                  "bare/algae",
+                                  "algae",
+                                  "eelgrass"))
+
+
+
+# make figure 6
+ggplot(data = pelagic_mod_plot,aes(x=p_cover_data,y=p_estimate_cover))+
+  geom_point(size=4)+
+  theme_classic()+ 
+  labs(x="cover type",
+       y="feeding probability",
+       title = "crabs")+
+    scale_y_continuous(breaks = c(0,0.25,0.5,0.75,1.0),
+                     labels = c(0,0.25,0.5,0.75,1.0),
+                     expand = c(0, 0),
+                     limits = c(0,1))+
+ theme(legend.position = "none")+
+  geom_errorbar(aes(ymin=p_se_lower_cover,ymax=p_se_upper_cover,width=0.2))
+
+ggsave(here( "figures", "fig_06_benthic_model_cover_type.png"),width = 7,height = 7,units = "in")
+```
