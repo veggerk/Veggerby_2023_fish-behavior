@@ -309,11 +309,9 @@ lower.tail = FALSE)
 model coefficients plots benthic
 ```{r model coefficients plots benthic}
 
-benthic_model_top <- glm(feeding_behavior ~ 0 + habitat_type + visibility + eelgrass_algae_bare, data = benthic, family = binomial)
 
-summary(benthic_model_top)$coefficients
 
-# benthic
+# benthic habitat type coefficients
 
 #                                       
 #                                    Estimate  Std. Error
@@ -413,7 +411,7 @@ demersal_model_top <- glm(feeding_behavior ~ 0 + habitat_type, data = demersal, 
 summary(demersal_model_top)$coefficients
 
 
-# demersal  
+# demersal habitat type coefficients
 #                               Estimate Std. Error
 # habitat_typeeelgrass        -2.2823824  0.4694765
 # habitat_typesediment        -0.6931472  0.2970443
@@ -479,7 +477,7 @@ pelagic_model_top<- glmer(feeding_behavior ~ 0 + habitat_type + eelgrass_algae_b
 
 summary(pelagic_model_top)$coefficients
 
-# pelagic
+# pelagic habitat type coefficients
 #                                 Estimate Std. Error 
 # habitat_typeeelgrass          -0.58956672  0.6126456
 # habitat_typesediment          -0.79780051  0.4746709 
@@ -566,7 +564,7 @@ pelagic_model_top<- glmer(feeding_behavior ~ 0 + eelgrass_algae_bare + habitat_t
 
 summary(pelagic_model_top)$coefficients
 
-# pelagic
+# pelagic cover type coefficients
 # 
 # eelgrass_algae_barebare       -0.72450949  0.4120620 
 # eelgrass_algae_barebare/algae -1.42723666  0.6053752 
@@ -627,11 +625,8 @@ benthic model cover type plot
 ```{r benthic model cover type plot}
 
 
-top_model_benthic <- glm(feeding_behavior ~ 0 + habitat_type + visibility + eelgrass_algae_bare, data = benthic, family = binomial)
 
-summary(top_model_benthic)$coefficients
-
-# benthic
+# benthic cover type coefficients 
 # 
 # eelgrass_algae_barebare           -1.0105410    0.3946949 
 # eelgrass_algae_barebare/algae     -2.5598736    1.3522715
