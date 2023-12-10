@@ -474,8 +474,8 @@ ggsave(here("figures", "fig_04_demersal_model_habitat_type.png"),width = 7,heigh
 model coefficients plots pelagic
 ```{r model coefficients plots pelagic}
 
-
-pelagic_model_top<- glmer(feeding_behavior ~ 0 + eelgrass_algae_bare + habitat_type + (1 | Site), data = pelagic, family = binomial)
+# switch order of fixed effects to get the correct coefficient outputs for each fixed effect. 
+pelagic_model_top<- glmer(feeding_behavior ~ 0 + habitat_type + eelgrass_algae_bare + (1 | Site), data = pelagic, family = binomial)
 
 summary(pelagic_model_top)$coefficients
 
